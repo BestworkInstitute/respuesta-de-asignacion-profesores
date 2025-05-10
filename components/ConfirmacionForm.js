@@ -4,6 +4,7 @@ export default function ConfirmacionForm({ bloques }) {
   const [seleccion, setSeleccion] = useState([]);
   const [modo, setModo] = useState(null); // null | 'aceptar_todo' | 'personalizado'
   const [modalVisible, setModalVisible] = useState(false);
+  const [estadoEnvio, setEstadoEnvio] = useState(null); // null | 'enviando' | 'finalizado'
 
   useEffect(() => {
     setSeleccion(bloques.map(b => ({ ...b, estado: '' })));
@@ -35,18 +36,31 @@ export default function ConfirmacionForm({ bloques }) {
       return;
     }
 
-    const res = await fetch('/api/submit-confirmacion', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ datos: confirmados }),
-    });
+    setEstadoEnvio('enviando');
 
-    const json = await res.json();
-    if (json.success) {
-      setModalVisible(true);
-      setTimeout(() => setModalVisible(false), 5000); // Cierra modal en 5s
-    } else {
-      alert('❌ Error al enviar confirmación');
+    try {
+      const res = await fetch('/api/submit-confirmacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ datos: confirmados }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        setModalVisible(true);
+        setEstadoEnvio('finalizado');
+
+        setTimeout(() => {
+          setModalVisible(false);
+          setEstadoEnvio(null);
+        }, 5000);
+      } else {
+        setEstadoEnvio(null);
+        alert('❌ Error al enviar confirmación');
+      }
+    } catch (err) {
+      setEstadoEnvio(null);
+      alert('🚨 Error de conexión');
     }
   };
 
@@ -113,19 +127,26 @@ export default function ConfirmacionForm({ bloques }) {
 
       <button
         onClick={enviarConfirmacion}
+        disabled={estadoEnvio === 'enviando'}
         style={{
           marginTop: '2rem',
           padding: '12px 24px',
-          backgroundColor: '#007bff',
+          backgroundColor: estadoEnvio === 'enviando' ? '#ccc' : '#007bff',
           color: '#fff',
           border: 'none',
           borderRadius: '5px',
           fontSize: '16px',
-          cursor: 'pointer',
+          cursor: estadoEnvio === 'enviando' ? 'not-allowed' : 'pointer',
         }}
       >
-        🚀 Enviar Confirmación
+        {estadoEnvio === 'enviando' ? '⏳ Enviando...' : '🚀 Enviar Confirmación'}
       </button>
+
+      {estadoEnvio === 'finalizado' && (
+        <div style={{ marginTop: '1rem', fontWeight: 'bold', color: '#28a745' }}>
+          ✅ Proceso finalizado
+        </div>
+      )}
 
       {/* ✅ MODAL EMERGENTE */}
       {modalVisible && (
