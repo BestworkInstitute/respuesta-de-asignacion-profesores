@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function ConfirmacionForm({ bloques }) {
   const [seleccion, setSeleccion] = useState([]);
-  const [modo, setModo] = useState(null); // null | 'aceptar_todo' | 'personalizado'
+  const [modo, setModo] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [estadoEnvio, setEstadoEnvio] = useState(null);
 
   useEffect(() => {
-    setSeleccion(bloques.map(b => ({ ...b, estado: '' })));
+    if (Array.isArray(bloques)) {
+      setSeleccion(bloques.map(b => ({ ...b, estado: '' })));
+    }
   }, [bloques]);
 
   const aceptarTodos = () => {
@@ -35,19 +40,48 @@ export default function ConfirmacionForm({ bloques }) {
       return;
     }
 
-    const res = await fetch('/api/submit-confirmacion', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ datos: confirmados }),
-    });
+    setEstadoEnvio('enviando');
 
-    const json = await res.json();
-    if (json.success) {
-      setModalVisible(true);
-      setTimeout(() => setModalVisible(false), 5000); // Cierra modal en 5s
-    } else {
-      alert('❌ Error al enviar confirmación');
+    try {
+      const res = await fetch('/api/submit-confirmacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ datos: confirmados }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        setModalVisible(true);
+        setEstadoEnvio('finalizado');
+
+        // PDF de bloques ACEPTADOS
+        const aceptados = confirmados.filter(b => b.estado === 'Aceptado');
+        descargarPDF(aceptados);
+
+        setTimeout(() => {
+          setModalVisible(false);
+          setEstadoEnvio(null);
+        }, 5000);
+      } else {
+        setEstadoEnvio(null);
+        alert('❌ Error al enviar confirmación');
+      }
+    } catch (err) {
+      setEstadoEnvio(null);
+      alert('🚨 Error de conexión');
     }
+  };
+
+  const descargarPDF = (bloquesAceptados) => {
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text('📄 Carga Académica Confirmada', 14, 20);
+    autoTable(doc, {
+      startY: 30,
+      head: [['Bloque', 'Curso', 'Día']],
+      body: bloquesAceptados.map(b => [b.bloque, b.curso, b.dia]),
+    });
+    doc.save('carga_confirmada.pdf');
   };
 
   return (
@@ -83,26 +117,10 @@ export default function ConfirmacionForm({ bloques }) {
 
             {modo === 'personalizado' && (
               <div style={{ display: 'flex', gap: '10px', marginTop: '0.5rem' }}>
-                <button
-                  onClick={() => setEstadoIndividual(i, 'Aceptado')}
-                  style={{
-                    backgroundColor: '#d4fcd4',
-                    border: '1px solid #ccc',
-                    padding: '6px 10px',
-                    cursor: 'pointer',
-                  }}
-                >
+                <button onClick={() => setEstadoIndividual(i, 'Aceptado')} style={styles.btnOk}>
                   ✅ Aceptar
                 </button>
-                <button
-                  onClick={() => setEstadoIndividual(i, 'Rechazado')}
-                  style={{
-                    backgroundColor: '#fcd4d4',
-                    border: '1px solid #ccc',
-                    padding: '6px 10px',
-                    cursor: 'pointer',
-                  }}
-                >
+                <button onClick={() => setEstadoIndividual(i, 'Rechazado')} style={styles.btnNo}>
                   ❌ Rechazar
                 </button>
               </div>
@@ -113,21 +131,18 @@ export default function ConfirmacionForm({ bloques }) {
 
       <button
         onClick={enviarConfirmacion}
-        style={{
-          marginTop: '2rem',
-          padding: '12px 24px',
-          backgroundColor: '#007bff',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '5px',
-          fontSize: '16px',
-          cursor: 'pointer',
-        }}
+        disabled={estadoEnvio === 'enviando'}
+        style={estadoEnvio === 'enviando' ? styles.btnDisabled : styles.btnSend}
       >
-        🚀 Enviar Confirmación
+        {estadoEnvio === 'enviando' ? '⏳ Enviando información...' : '🚀 Enviar Confirmación'}
       </button>
 
-      {/* ✅ MODAL EMERGENTE */}
+      {estadoEnvio === 'finalizado' && (
+        <div style={{ marginTop: '1rem', fontWeight: 'bold', color: '#28a745' }}>
+          ✅ Proceso finalizado
+        </div>
+      )}
+
       {modalVisible && (
         <div style={modalStyles.backdrop} onClick={() => setModalVisible(false)}>
           <div style={modalStyles.modal}>
@@ -140,6 +155,41 @@ export default function ConfirmacionForm({ bloques }) {
     </div>
   );
 }
+
+const styles = {
+  btnSend: {
+    marginTop: '2rem',
+    padding: '12px 24px',
+    backgroundColor: '#007bff',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    fontSize: '16px',
+    cursor: 'pointer',
+  },
+  btnDisabled: {
+    marginTop: '2rem',
+    padding: '12px 24px',
+    backgroundColor: '#ccc',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    fontSize: '16px',
+    cursor: 'not-allowed',
+  },
+  btnOk: {
+    backgroundColor: '#d4fcd4',
+    border: '1px solid #ccc',
+    padding: '6px 10px',
+    cursor: 'pointer',
+  },
+  btnNo: {
+    backgroundColor: '#fcd4d4',
+    border: '1px solid #ccc',
+    padding: '6px 10px',
+    cursor: 'pointer',
+  }
+};
 
 const modalStyles = {
   backdrop: {
