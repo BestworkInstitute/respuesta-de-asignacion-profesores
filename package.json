@@ -15,10 +15,7 @@
     "googleapis": "^130.0.0",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
-<<<<<<< HEAD
     "lucide-react": "^0.511.0",
-=======
->>>>>>> 04b7c0cb4b9e29a69fa84e321632874c9ebe4395
     "next": "^13.4.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
