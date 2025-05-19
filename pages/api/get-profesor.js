@@ -42,7 +42,8 @@ export default async function handler(req, res) {
         confirmacion: row[6] || '',
       }));
 
-    res.status(200).json({ bloques });
+    const nombreProfesor = bloques[0]?.profesor || 'Profesor desconocido';
+    res.status(200).json({ bloques, nombreProfesor });
 
   } catch (err) {
     console.error('💥 Error en API /get-profesor:', err);
