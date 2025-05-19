@@ -75,6 +75,20 @@ export default function Home() {
 
         const aceptados = confirmados.filter(b => b.estado === 'Aceptado');
         descargarPDF(aceptados);
+
+        // ✅ Mostrar mensaje y resetear al inicio después de 4s
+        setTimeout(() => {
+          alert('✅ Su carga ha sido enviada con éxito y su PDF se ha descargado.');
+          // Reiniciar todos los estados
+          setCodigo('');
+          setBloques([]);
+          setSeleccion([]);
+          setModo(null);
+          setEstadoEnvio(null);
+          setYaConfirmado(false);
+          setNombreProfesor('');
+          setConfirmadoRecientemente(false);
+        }, 4000);
       } else {
         alert('❌ Error al enviar confirmación');
         setEstadoEnvio(null);
@@ -203,12 +217,6 @@ export default function Home() {
           >
             {estadoEnvio === 'enviando' ? '⏳ Enviando información...' : '🚀 Enviar Confirmación'}
           </button>
-
-          {estadoEnvio === 'finalizado' && confirmadoRecientemente && (
-            <div style={{ marginTop: '1rem', fontWeight: 'bold', color: '#28a745' }}>
-              ✅ Confirmación enviada y PDF descargado
-            </div>
-          )}
         </div>
       )}
     </div>
