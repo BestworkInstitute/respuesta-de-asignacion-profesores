@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 
-export default function ConfirmacionForm({ bloques }) {
+export default function ConfirmacionForm({ bloques, onConfirmar }) {
   const [seleccion, setSeleccion] = useState([]);
-  const [modo, setModo] = useState(null); // null | 'aceptar_todo' | 'personalizado'
+  const [modo, setModo] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [estadoEnvio, setEstadoEnvio] = useState(null); // null | 'enviando' | 'finalizado'
+  const [estadoEnvio, setEstadoEnvio] = useState(null);
 
   useEffect(() => {
-    setSeleccion(bloques.map(b => ({ ...b, estado: '' })));
+    if (Array.isArray(bloques)) {
+      setSeleccion(bloques.map(b => ({ ...b, estado: '' })));
+    }
   }, [bloques]);
 
   const aceptarTodos = () => {
@@ -50,6 +52,10 @@ export default function ConfirmacionForm({ bloques }) {
         setModalVisible(true);
         setEstadoEnvio('finalizado');
 
+        if (typeof onConfirmar === 'function') {
+          onConfirmar(confirmados); // 🔥 Notifica al padre
+        }
+
         setTimeout(() => {
           setModalVisible(false);
           setEstadoEnvio(null);
@@ -66,7 +72,7 @@ export default function ConfirmacionForm({ bloques }) {
 
   return (
     <div style={{ marginTop: '2rem', position: 'relative' }}>
-      <h2>📋 Bloques asignados</h2>
+      <h2>Bloques asignados</h2>
 
       <div style={{ marginBottom: '1rem' }}>
         <button onClick={aceptarTodos}>✅ Aceptar todos</button>
@@ -97,26 +103,10 @@ export default function ConfirmacionForm({ bloques }) {
 
             {modo === 'personalizado' && (
               <div style={{ display: 'flex', gap: '10px', marginTop: '0.5rem' }}>
-                <button
-                  onClick={() => setEstadoIndividual(i, 'Aceptado')}
-                  style={{
-                    backgroundColor: '#d4fcd4',
-                    border: '1px solid #ccc',
-                    padding: '6px 10px',
-                    cursor: 'pointer',
-                  }}
-                >
+                <button onClick={() => setEstadoIndividual(i, 'Aceptado')} style={styles.btnOk}>
                   ✅ Aceptar
                 </button>
-                <button
-                  onClick={() => setEstadoIndividual(i, 'Rechazado')}
-                  style={{
-                    backgroundColor: '#fcd4d4',
-                    border: '1px solid #ccc',
-                    padding: '6px 10px',
-                    cursor: 'pointer',
-                  }}
-                >
+                <button onClick={() => setEstadoIndividual(i, 'Rechazado')} style={styles.btnNo}>
                   ❌ Rechazar
                 </button>
               </div>
@@ -128,18 +118,9 @@ export default function ConfirmacionForm({ bloques }) {
       <button
         onClick={enviarConfirmacion}
         disabled={estadoEnvio === 'enviando'}
-        style={{
-          marginTop: '2rem',
-          padding: '12px 24px',
-          backgroundColor: estadoEnvio === 'enviando' ? '#ccc' : '#007bff',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '5px',
-          fontSize: '16px',
-          cursor: estadoEnvio === 'enviando' ? 'not-allowed' : 'pointer',
-        }}
+        style={estadoEnvio === 'enviando' ? styles.btnDisabled : styles.btnSend}
       >
-        {estadoEnvio === 'enviando' ? '⏳ Enviando...' : '🚀 Enviar Confirmación'}
+        {estadoEnvio === 'enviando' ? '⏳ Enviando información...' : '🚀 Enviar Confirmación'}
       </button>
 
       {estadoEnvio === 'finalizado' && (
@@ -148,7 +129,6 @@ export default function ConfirmacionForm({ bloques }) {
         </div>
       )}
 
-      {/* ✅ MODAL EMERGENTE */}
       {modalVisible && (
         <div style={modalStyles.backdrop} onClick={() => setModalVisible(false)}>
           <div style={modalStyles.modal}>
@@ -161,6 +141,41 @@ export default function ConfirmacionForm({ bloques }) {
     </div>
   );
 }
+
+const styles = {
+  btnSend: {
+    marginTop: '2rem',
+    padding: '12px 24px',
+    backgroundColor: '#007bff',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    fontSize: '16px',
+    cursor: 'pointer',
+  },
+  btnDisabled: {
+    marginTop: '2rem',
+    padding: '12px 24px',
+    backgroundColor: '#ccc',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    fontSize: '16px',
+    cursor: 'not-allowed',
+  },
+  btnOk: {
+    backgroundColor: '#d4fcd4',
+    border: '1px solid #ccc',
+    padding: '6px 10px',
+    cursor: 'pointer',
+  },
+  btnNo: {
+    backgroundColor: '#fcd4d4',
+    border: '1px solid #ccc',
+    padding: '6px 10px',
+    cursor: 'pointer',
+  }
+};
 
 const modalStyles = {
   backdrop: {
