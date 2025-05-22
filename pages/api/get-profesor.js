@@ -19,11 +19,10 @@ export default async function handler(req, res) {
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.SPREADSHEET_ID,
-      range: 'TALLERES ASIGNADOS PROFESORES!A1:G',
+      range: 'TALLERES ASIGNADOS PROFESORES!A1:H',
     });
 
     const rows = response.data.values;
-
     if (!rows || rows.length === 0) {
       return res.status(404).json({ error: 'No se encontraron datos en la hoja' });
     }
@@ -31,15 +30,16 @@ export default async function handler(req, res) {
     const [headers, ...data] = rows;
 
     const bloques = data
-      .filter(row => row[5] === codigo)
+      .filter(row => row[6] === codigo) // CLAVE PROFESOR
       .map(row => ({
         bloque: row[0],
         curso: row[1],
         dia: row[2],
         idBloque: row[3],
-        profesor: row[4],
-        codigo: row[5],
-        confirmacion: row[6] || '',
+        cuenta: row[4],
+        profesor: row[5],
+        codigo: row[6],
+        confirmacion: row[7] || '',
       }));
 
     const nombreProfesor = bloques[0]?.profesor || 'Profesor desconocido';
