@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -6,24 +6,19 @@ export default function Home() {
   const [codigo, setCodigo] = useState('');
   const [bloques, setBloques] = useState([]);
   const [seleccion, setSeleccion] = useState([]);
+  const [nombreProfesor, setNombreProfesor] = useState('');
+  const [yaConfirmado, setYaConfirmado] = useState(false);
   const [modo, setModo] = useState(null);
   const [estadoEnvio, setEstadoEnvio] = useState(null);
-  const [yaConfirmado, setYaConfirmado] = useState(false);
-  const [nombreProfesor, setNombreProfesor] = useState('');
-  const [confirmadoRecientemente, setConfirmadoRecientemente] = useState(false);
 
   const buscar = async () => {
-    if (!codigo) {
-      alert('⚠️ Ingresa tu código');
-      return;
-    }
+    if (!codigo) return alert('⚠️ Ingresa tu código');
 
     const res = await fetch(`/api/get-profesor?codigo=${codigo}`);
     const json = await res.json();
 
     if (!json || !json.bloques || json.bloques.length === 0) {
-      alert('❌ No se encontraron bloques para este código');
-      return;
+      return alert('❌ No se encontraron bloques');
     }
 
     const confirmados = json.bloques.filter(b => b.confirmacion).length;
@@ -31,7 +26,6 @@ export default function Home() {
     setBloques(json.bloques);
     setSeleccion(json.bloques.map(b => ({ ...b, estado: '' })));
     setNombreProfesor(json.nombreProfesor || '');
-    setConfirmadoRecientemente(false);
   };
 
   const aceptarTodos = () => {
@@ -51,15 +45,10 @@ export default function Home() {
   };
 
   const enviarConfirmacion = async () => {
-    const confirmados = seleccion.filter(b => b.estado === 'Aceptado' || b.estado === 'Rechazado');
-
-    if (confirmados.length === 0) {
-      alert('⚠️ Debes confirmar al menos un bloque.');
-      return;
-    }
+    const confirmados = seleccion.filter(b => ['Aceptado', 'Rechazado'].includes(b.estado));
+    if (confirmados.length === 0) return alert('⚠️ Selecciona al menos un bloque');
 
     setEstadoEnvio('enviando');
-
     try {
       const res = await fetch('/api/submit-confirmacion', {
         method: 'POST',
@@ -70,13 +59,13 @@ export default function Home() {
       const json = await res.json();
       if (json.success) {
         setYaConfirmado(true);
-        setConfirmadoRecientemente(true);
         setEstadoEnvio('finalizado');
 
         const aceptados = confirmados.filter(b => b.estado === 'Aceptado');
         descargarPDF(aceptados);
 
         setTimeout(() => {
+<<<<<<< HEAD
           alert('✅ Su carga ha sido enviada con éxito y su PDF se ha descargado.');
           setCodigo('');
           setBloques([]);
@@ -87,34 +76,40 @@ export default function Home() {
           setNombreProfesor('');
           setConfirmadoRecientemente(false);
         }, 4000);
+=======
+          alert('✅ Confirmación enviada y PDF descargado.');
+          setCodigo('');
+          setBloques([]);
+          setSeleccion([]);
+          setNombreProfesor('');
+          setModo(null);
+        }, 2000);
+>>>>>>> 70ce3af (💾 Proyecto actualizado: Confirmación de talleres funcional con PDF y Google Sheets)
       } else {
         alert('❌ Error al enviar confirmación');
         setEstadoEnvio(null);
       }
     } catch (err) {
-      alert('🚨 Error de conexión');
+      console.error('🚨', err);
+      alert('🚨 Error de red');
       setEstadoEnvio(null);
     }
   };
 
-  const descargarPDF = (bloquesParaPDF) => {
+  const descargarPDF = (bloquesPDF) => {
     const doc = new jsPDF();
     const now = new Date();
-
     const fecha = now.toLocaleDateString('es-CL');
-    const hora = now.toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const hora = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
 
-    doc.setFontSize(14);
-    doc.text('Carga Académica Confirmada', 14, 20);
-
-    doc.setFontSize(11);
-    doc.text(`Profesor: ${nombreProfesor}`, 14, 28);
-    doc.text(`Fecha de descarga: ${fecha} ${hora}`, 14, 35);
+    doc.setFontSize(16);
+    doc.text(' Carga Académica Confirmada', 14, 20);
+    doc.setFontSize(12);
+    doc.text(`${nombreProfesor}`, 14, 30);
+    doc.text(`Fecha de descarga: ${fecha} ${hora}`, 14, 37);
 
     autoTable(doc, {
+<<<<<<< HEAD
       startY: 42,
       head: [['Bloque', 'Curso', 'Día', 'Cuenta']],
       body: bloquesParaPDF.map(b => [
@@ -123,9 +118,15 @@ export default function Home() {
         b.dia,
         b.cuenta || '',
       ]),
+=======
+      startY: 45,
+      head: [['Bloque', 'Curso', 'Día', 'Cuenta']],
+      body: bloquesPDF.map(b => [b.bloque, b.curso, b.dia, b.cuenta]),
+>>>>>>> 70ce3af (💾 Proyecto actualizado: Confirmación de talleres funcional con PDF y Google Sheets)
     });
 
-    doc.save(`carga_confirmada_${nombreProfesor.replace(/\s+/g, '_')}.pdf`);
+    const filename = `confirmacion_${nombreProfesor.replace(/\s+/g, '_')}.pdf`;
+    doc.save(filename);
   };
 
   return (
@@ -139,7 +140,7 @@ export default function Home() {
         placeholder="Ej: CVEL503"
         style={{ padding: '10px', width: '250px', marginRight: '1rem' }}
       />
-      <button onClick={buscar}>Buscar</button>
+      <button onClick={buscar}>🔍 Buscar</button>
 
       {yaConfirmado && (
         <div style={{ marginTop: '1rem', color: '#28a745', fontWeight: 'bold' }}>
@@ -149,64 +150,33 @@ export default function Home() {
           <br />
           <button
             onClick={() => {
-              const aceptados = seleccion.filter(b => b.estado === 'Aceptado' || b.confirmacion === 'Aceptado');
+              const aceptados = bloques.filter(b => b.confirmacion === 'Aceptado');
               descargarPDF(aceptados);
             }}
-            style={{
-              marginTop: '0.5rem',
-              padding: '10px 20px',
-              backgroundColor: '#6c63ff',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '15px',
-            }}
+            style={styles.btnPdf}
           >
             📄 Descargar PDF
           </button>
         </div>
       )}
 
-      {bloques.length > 0 && !yaConfirmado && (
+      {!yaConfirmado && bloques.length > 0 && (
         <div style={{ marginTop: '2rem' }}>
           <h2>Bloques asignados</h2>
 
           <div style={{ marginBottom: '1rem' }}>
-            <button onClick={aceptarTodos}>✅ Aceptar todos</button>
+            <button onClick={aceptarTodos}>✅ Aceptar todos</button>{' '}
             <button onClick={seleccionarRechazos}>✏️ Seleccionar Rechazos</button>
           </div>
 
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {seleccion.map((b, i) => (
-              <li
-                key={i}
-                style={{
-                  padding: '10px',
-                  marginBottom: '8px',
-                  border: '1px solid #ccc',
-                  backgroundColor:
-                    b.estado === 'Aceptado'
-                      ? '#d4fcd4'
-                      : b.estado === 'Rechazado'
-                      ? '#fcd4d4'
-                      : '#f3f3f3',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <span>{b.dia} {b.bloque} - {b.curso} ({b.estado || 'Sin confirmar'})</span>
-
+              <li key={i} style={styles.item(b.estado)}>
+                <span>{b.dia} {b.bloque} - {b.curso} | {b.estado || 'Sin confirmar'}</span>
                 {modo === 'personalizado' && (
                   <div style={{ display: 'flex', gap: '10px', marginTop: '0.5rem' }}>
-                    <button onClick={() => setEstadoIndividual(i, 'Aceptado')} style={styles.btnOk}>
-                      ✅ Aceptar
-                    </button>
-                    <button onClick={() => setEstadoIndividual(i, 'Rechazado')} style={styles.btnNo}>
-                      ❌ Rechazar
-                    </button>
+                    <button onClick={() => setEstadoIndividual(i, 'Aceptado')} style={styles.btnOk}>✅ Aceptar</button>
+                    <button onClick={() => setEstadoIndividual(i, 'Rechazado')} style={styles.btnNo}>❌ Rechazar</button>
                   </div>
                 )}
               </li>
@@ -218,7 +188,7 @@ export default function Home() {
             disabled={estadoEnvio === 'enviando'}
             style={estadoEnvio === 'enviando' ? styles.btnDisabled : styles.btnSend}
           >
-            {estadoEnvio === 'enviando' ? '⏳ Enviando información...' : '🚀 Enviar Confirmación'}
+            {estadoEnvio === 'enviando' ? '⏳ Enviando...' : '🚀 Enviar Confirmación'}
           </button>
         </div>
       )}
@@ -227,9 +197,18 @@ export default function Home() {
 }
 
 const styles = {
+  item: estado => ({
+    padding: '10px',
+    marginBottom: '10px',
+    backgroundColor:
+      estado === 'Aceptado' ? '#d4fcd4' :
+      estado === 'Rechazado' ? '#fcd4d4' : '#f1f1f1',
+    border: '1px solid #ccc',
+    borderRadius: '5px',
+  }),
   btnSend: {
-    marginTop: '2rem',
-    padding: '12px 24px',
+    marginTop: '1rem',
+    padding: '12px 20px',
     backgroundColor: '#007bff',
     color: '#fff',
     border: 'none',
@@ -238,25 +217,34 @@ const styles = {
     cursor: 'pointer',
   },
   btnDisabled: {
-    marginTop: '2rem',
-    padding: '12px 24px',
-    backgroundColor: '#ccc',
+    marginTop: '1rem',
+    padding: '12px 20px',
+    backgroundColor: '#aaa',
     color: '#fff',
-    border: 'none',
     borderRadius: '5px',
     fontSize: '16px',
-    cursor: 'not-allowed',
   },
   btnOk: {
-    backgroundColor: '#d4fcd4',
-    border: '1px solid #ccc',
+    backgroundColor: '#28a745',
+    color: '#fff',
+    border: 'none',
     padding: '6px 10px',
     cursor: 'pointer',
   },
   btnNo: {
-    backgroundColor: '#fcd4d4',
-    border: '1px solid #ccc',
+    backgroundColor: '#dc3545',
+    color: '#fff',
+    border: 'none',
     padding: '6px 10px',
     cursor: 'pointer',
-  }
+  },
+  btnPdf: {
+    marginTop: '0.5rem',
+    padding: '10px 16px',
+    backgroundColor: '#6c63ff',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+  },
 };
