@@ -76,10 +76,8 @@ export default function Home() {
         const aceptados = confirmados.filter(b => b.estado === 'Aceptado');
         descargarPDF(aceptados);
 
-        // ✅ Mostrar mensaje y resetear al inicio después de 4s
         setTimeout(() => {
           alert('✅ Su carga ha sido enviada con éxito y su PDF se ha descargado.');
-          // Reiniciar todos los estados
           setCodigo('');
           setBloques([]);
           setSeleccion([]);
@@ -118,8 +116,13 @@ export default function Home() {
 
     autoTable(doc, {
       startY: 42,
-      head: [['Bloque', 'Curso', 'Día']],
-      body: bloquesParaPDF.map(b => [b.bloque, b.curso, b.dia]),
+      head: [['Bloque', 'Curso', 'Día', 'Cuenta']],
+      body: bloquesParaPDF.map(b => [
+        b.bloque,
+        b.curso,
+        b.dia,
+        b.cuenta || '',
+      ]),
     });
 
     doc.save(`carga_confirmada_${nombreProfesor.replace(/\s+/g, '_')}.pdf`);
@@ -127,13 +130,13 @@ export default function Home() {
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'Segoe UI' }}>
-      <h1>🎓 Confirmación de Talleres</h1>
-      <p>Bienvenido profesor. Ingrese su código para revisar sus asignaciones:</p>
+      <h1>🎓 Bienvenido Profesor/a</h1>
+      <p>Ingrese su código para revisar y confirmar sus asignaciones académicas:</p>
 
       <input
         value={codigo}
         onChange={e => setCodigo(e.target.value)}
-        placeholder="Ej: FQUI382"
+        placeholder="Ej: CVEL503"
         style={{ padding: '10px', width: '250px', marginRight: '1rem' }}
       />
       <button onClick={buscar}>Buscar</button>
