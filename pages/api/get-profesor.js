@@ -29,11 +29,10 @@ export default async function handler(req, res) {
     const [headers, ...data] = rows;
 
     const bloques = data
-<<<<<<< HEAD
+
       .filter(row => row[6] === codigo) // CLAVE PROFESOR
-=======
+
       .filter(row => row[6]?.trim().toUpperCase() === codigo.trim().toUpperCase())
->>>>>>> 70ce3af (💾 Proyecto actualizado: Confirmación de talleres funcional con PDF y Google Sheets)
       .map(row => ({
         bloque: row[0],
         curso: row[1],
@@ -53,3 +52,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Error interno' });
   }
 }
+
