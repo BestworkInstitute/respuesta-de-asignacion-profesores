@@ -65,18 +65,6 @@ export default function Home() {
         descargarPDF(aceptados);
 
         setTimeout(() => {
-<<<<<<< HEAD
-          alert('✅ Su carga ha sido enviada con éxito y su PDF se ha descargado.');
-          setCodigo('');
-          setBloques([]);
-          setSeleccion([]);
-          setModo(null);
-          setEstadoEnvio(null);
-          setYaConfirmado(false);
-          setNombreProfesor('');
-          setConfirmadoRecientemente(false);
-        }, 4000);
-=======
           alert('✅ Confirmación enviada y PDF descargado.');
           setCodigo('');
           setBloques([]);
@@ -84,7 +72,6 @@ export default function Home() {
           setNombreProfesor('');
           setModo(null);
         }, 2000);
->>>>>>> 70ce3af (💾 Proyecto actualizado: Confirmación de talleres funcional con PDF y Google Sheets)
       } else {
         alert('❌ Error al enviar confirmación');
         setEstadoEnvio(null);
@@ -109,21 +96,11 @@ export default function Home() {
     doc.text(`Fecha de descarga: ${fecha} ${hora}`, 14, 37);
 
     autoTable(doc, {
-<<<<<<< HEAD
-      startY: 42,
-      head: [['Bloque', 'Curso', 'Día', 'Cuenta']],
-      body: bloquesParaPDF.map(b => [
-        b.bloque,
-        b.curso,
-        b.dia,
-        b.cuenta || '',
-      ]),
-=======
       startY: 45,
       head: [['Bloque', 'Curso', 'Día', 'Cuenta']],
       body: bloquesPDF.map(b => [b.bloque, b.curso, b.dia, b.cuenta]),
->>>>>>> 70ce3af (💾 Proyecto actualizado: Confirmación de talleres funcional con PDF y Google Sheets)
     });
+    
 
     const filename = `confirmacion_${nombreProfesor.replace(/\s+/g, '_')}.pdf`;
     doc.save(filename);
@@ -131,13 +108,13 @@ export default function Home() {
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'Segoe UI' }}>
-      <h1>🎓 Bienvenido Profesor/a</h1>
-      <p>Ingrese su código para revisar y confirmar sus asignaciones académicas:</p>
+      <h1>🎓 Confirmación de Talleres</h1>
+      <p>Bienvenido profesor. Ingrese su código para revisar sus asignaciones:</p>
 
       <input
         value={codigo}
         onChange={e => setCodigo(e.target.value)}
-        placeholder="Ej: CVEL503"
+        placeholder="Ej: FQUI382"
         style={{ padding: '10px', width: '250px', marginRight: '1rem' }}
       />
       <button onClick={buscar}>🔍 Buscar</button>
